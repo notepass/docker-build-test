@@ -122,26 +122,26 @@ def handle_db_user_creation(db_user_request):
     """
     try:
         spec = db_user_request.get('spec', {})
-        db_name = spec.get('db_name', '')
+        db_type = spec.get('db_type', '')
         custom_db_name_prop = spec.get('custom_db_name_prop', '')
         metadata = db_user_request.get('metadata', {})
         resource_name = metadata.get('name', 'unknown')
         
         print(f"Handling creation of DbUserRequest: {resource_name}")
-        print(f"  db_name: {db_name}")
+        print(f"  db_type: {db_type}")
         print(f"  custom_db_name_prop: {custom_db_name_prop}")
         
         # Determine which script to call based on db_name
-        if db_name.lower() == 'mariadb':
+        if db_type.lower() == 'mariadb':
             script_path = './create-mariadb-user.sh'
-        elif db_name.lower() == 'postgres':
+        elif db_type.lower() == 'postgres':
             script_path = './create-pg-user.sh'
         else:
-            print(f"Warning: Unknown db_name '{db_name}'. No action taken.")
+            print(f"Warning: Unknown db_name '{db_type}'. No action taken.")
             return
         
         # Call the script with parameters
-        cmd = [script_path, resource_name, db_name, custom_db_name_prop]
+        cmd = [script_path, resource_name, db_type, custom_db_name_prop]
         result = subprocess.run(cmd, capture_output=True, text=True)
         
         print(f"Script output: {result.stdout}")
