@@ -132,7 +132,7 @@ def create_event_for_resource(resource_name, namespace, resource_uid, reason, me
         
         event_name = f"{resource_name}.{datetime.now(timezone.utc).strftime('%s')}"
         
-        event = client.V1Event(
+        event = client.CoreV1Event(
             metadata=client.V1ObjectMeta(
                 name=event_name,
                 namespace=namespace
