@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
 Kubernetes CRD Manager
-A script to create and manage Kubernetes resources from Custom Resource Definitions (CRDs)
+A script to watch and manage DbUser Kubernetes Custom Resource Definitions (CRDs)
+
+This script watches for deletion of DbUser resources and calls the appropriate
+disable script (disable-mariadb-user.sh or disable-pg-user.sh) based on the db_type.
 """
 
 import os
