@@ -215,6 +215,45 @@ def delete_crd_resource(group, version, namespace, plural, name):
         raise
 
 
+def find_existing_dbuser_by_db_name(db_name, namespace):
+    """
+    Find an existing DbUser by db_name in the specified namespace
+    
+    Args:
+        db_name: The database name to search for (uppercase)
+        namespace: Kubernetes namespace to search in
+        
+    Returns:
+        DbUser object if found, None otherwise
+    """
+    api_instance = client.CustomObjectsApi()
+    group = 'notepass.de'
+    version = 'v1'
+    plural = 'dbuser'
+    
+    try:
+        # List all DbUser objects in the namespace
+        response = api_instance.list_namespaced_custom_object(
+            group=group,
+            version=version,
+            namespace=namespace,
+            plural=plural
+        )
+        
+        # Check if any DbUser has a matching db_name
+        for item in response.get('items', []):
+            spec = item.get('spec', {})
+            existing_db_name = spec.get('db_name', '')
+            if existing_db_name == db_name:
+                print(f"Found existing DbUser with db_name '{db_name}': {item['metadata']['name']}")
+                return item
+        
+        return None
+    except ApiException as e:
+        print(f"Exception when listing DbUser objects: {e}")
+        return None
+
+
 def create_event_for_resource(resource_name, namespace, resource_uid, reason, message, event_type='Warning'):
     """
     Create a Kubernetes event for a custom resource
@@ -306,6 +345,30 @@ def handle_db_user_creation(db_user_request):
         db_name_uppercase = custom_db_name_prop.upper()
         print(f"  db_name_uppercase: {db_name_uppercase}")
         
+        # Check if a DbUser with this db_name already exists
+        existing_dbuser = find_existing_dbuser_by_db_name(db_name_uppercase, namespace)
+        if existing_dbuser:
+            print(f"DbUser with db_name '{db_name_uppercase}' already exists. Skipping creation.")
+            # Create an event to indicate the request was already fulfilled
+            create_event_for_resource(
+                resource_name=resource_name,
+                namespace=namespace,
+                resource_uid=resource_uid,
+                reason='AlreadyExists',
+                message=f"DbUser with db_name '{db_name_uppercase}' already exists. Request considered fulfilled.",
+                event_type='Normal'
+            )
+            
+            # Delete the DbUserRequest as it's considered fulfilled
+            try:
+                group = 'notepass.de'
+                version = 'v1'
+                delete_crd_resource(group, version, namespace, 'dbuserrequests', resource_name)
+                print(f"DbUserRequest '{resource_name}' deleted as it was already fulfilled.")
+            except Exception as e:
+                print(f"Failed to delete DbUserRequest '{resource_name}': {e}")
+            return
+        
         # Generate a secure database password
         db_password = generate_db_password(24)
         print(f"  Generated password (length: {len(db_password)})")
@@ -370,12 +433,13 @@ def handle_db_user_creation(db_user_request):
                         'namespace': namespace
                     },
                     'spec': {
+                        'db_name': db_name_uppercase,  # Store the uppercase db_name
                         'request': spec,  # Store the entire spec from DbUserRequest
                         'created': datetime.now(timezone.utc).isoformat()
                     }
                 }
                 create_crd_resource(group, version, namespace, 'dbuser', db_user_body)
-                print(f"DbUser '{resource_name}' created successfully.")
+                print(f"DbUser '{resource_name}' created successfully with db_name '{db_name_uppercase}'.")
             except Exception as e:
                 print(f"Failed to create DbUser '{resource_name}': {e}")
             
