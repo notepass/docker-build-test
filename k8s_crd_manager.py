@@ -351,36 +351,34 @@ def handle_db_user_object_deletion(db_user):
         print(f"Error handling DbUser deletion: {e}")
 
 
-def watch_db_user_requests(namespace='default'):
+def watch_db_user_requests():
     """
     Watch for DbUserRequest custom resources and handle create/delete events
-    
-    Args:
-        namespace: Kubernetes namespace to watch (default: 'default')
+    across all namespaces
     """
     api_instance = client.CustomObjectsApi()
     group = 'notepass.de'
     version = 'v1'
     plural = 'dbuserrequests'
     
-    print(f"Starting to watch DbUserRequest resources in namespace: {namespace}")
+    print(f"Starting to watch DbUserRequest resources in all namespaces")
     print("=" * 60)
     
     w = watch.Watch()
     
     try:
         for event in w.stream(
-            api_instance.list_namespaced_custom_object,
+            api_instance.list_custom_object_for_all_namespaces,
             group=group,
             version=version,
-            namespace=namespace,
             plural=plural
         ):
             event_type = event['type']
             db_user_request = event['object']
             resource_name = db_user_request.get('metadata', {}).get('name', 'unknown')
+            resource_namespace = db_user_request.get('metadata', {}).get('namespace', 'unknown')
             
-            print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] Event: {event_type} - {resource_name}")
+            print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] Event: {event_type} - {resource_namespace}/{resource_name}")
             
             if event_type == 'ADDED':
                 handle_db_user_creation(db_user_request)
@@ -400,36 +398,34 @@ def watch_db_user_requests(namespace='default'):
         raise
 
 
-def watch_db_users(namespace='default'):
+def watch_db_users():
     """
     Watch for DbUser custom resources and handle deletion events
-    
-    Args:
-        namespace: Kubernetes namespace to watch (default: 'default')
+    across all namespaces
     """
     api_instance = client.CustomObjectsApi()
     group = 'notepass.de'
     version = 'v1'
     plural = 'dbuser'
     
-    print(f"Starting to watch DbUser resources in namespace: {namespace}")
+    print(f"Starting to watch DbUser resources in all namespaces")
     print("=" * 60)
     
     w = watch.Watch()
     
     try:
         for event in w.stream(
-            api_instance.list_namespaced_custom_object,
+            api_instance.list_custom_object_for_all_namespaces,
             group=group,
             version=version,
-            namespace=namespace,
             plural=plural
         ):
             event_type = event['type']
             db_user = event['object']
             resource_name = db_user.get('metadata', {}).get('name', 'unknown')
+            resource_namespace = db_user.get('metadata', {}).get('namespace', 'unknown')
             
-            print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] Event: {event_type} - {resource_name}")
+            print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] Event: {event_type} - {resource_namespace}/{resource_name}")
             
             if event_type == 'DELETED':
                 handle_db_user_object_deletion(db_user)
@@ -457,9 +453,6 @@ def main():
     # Load Kubernetes configuration
     load_k8s_config()
     
-    # Get namespace from environment variable or use default
-    namespace = os.environ.get('WATCH_NAMESPACE', 'default')
-    
     # Verify connection to Kubernetes cluster
     try:
         v1 = client.CoreV1Api()
@@ -472,7 +465,7 @@ def main():
         sys.exit(1)
     
     print(f"\nStarting to watch for DbUserRequest and DbUser resources...")
-    print(f"Namespace: {namespace}")
+    print(f"Watching all namespaces")
     print(f"Press Ctrl+C to stop\n")
     
     # Start watching for both DbUserRequest and DbUser resources in separate threads
@@ -480,14 +473,12 @@ def main():
         # Create threads for both watchers
         db_user_request_thread = threading.Thread(
             target=watch_db_user_requests,
-            args=(namespace,),
             daemon=True,
             name="DbUserRequestWatcher"
         )
         
         db_user_thread = threading.Thread(
             target=watch_db_users,
-            args=(namespace,),
             daemon=True,
             name="DbUserWatcher"
         )
