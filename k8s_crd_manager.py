@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 import time
+import threading
 from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
 
@@ -208,6 +209,42 @@ def handle_db_user_deletion(db_user_request):
         print(f"Error handling DbUserRequest deletion: {e}")
 
 
+def handle_db_user_object_deletion(db_user):
+    """
+    Handle deletion of a DbUser custom resource
+    Calls delete-pg-user.sh script with db_name from the request object
+    
+    Args:
+        db_user: The DbUser custom resource object
+    """
+    try:
+        spec = db_user.get('spec', {})
+        request = spec.get('request', {})
+        db_name = request.get('db_name', '')
+        metadata = db_user.get('metadata', {})
+        resource_name = metadata.get('name', 'unknown')
+        
+        print(f"Handling deletion of DbUser: {resource_name}")
+        print(f"  db_name from request: {db_name}")
+        
+        if not db_name:
+            print(f"Warning: No db_name found in request object. No action taken.")
+            return
+        
+        # Call the delete-pg-user.sh script with db_name parameter
+        script_path = './delete-pg-user.sh'
+        cmd = [script_path, db_name]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        print(f"Script output: {result.stdout}")
+        if result.stderr:
+            print(f"Script errors: {result.stderr}")
+        print(f"Script exit code: {result.returncode}")
+        
+    except Exception as e:
+        print(f"Error handling DbUser deletion: {e}")
+
+
 def watch_db_user_requests(namespace='default'):
     """
     Watch for DbUserRequest custom resources and handle create/delete events
@@ -257,9 +294,58 @@ def watch_db_user_requests(namespace='default'):
         raise
 
 
+def watch_db_users(namespace='default'):
+    """
+    Watch for DbUser custom resources and handle deletion events
+    
+    Args:
+        namespace: Kubernetes namespace to watch (default: 'default')
+    """
+    api_instance = client.CustomObjectsApi()
+    group = 'notepass.de'
+    version = 'v1'
+    plural = 'dbuser'
+    
+    print(f"Starting to watch DbUser resources in namespace: {namespace}")
+    print("=" * 60)
+    
+    w = watch.Watch()
+    
+    try:
+        for event in w.stream(
+            api_instance.list_namespaced_custom_object,
+            group=group,
+            version=version,
+            namespace=namespace,
+            plural=plural
+        ):
+            event_type = event['type']
+            db_user = event['object']
+            resource_name = db_user.get('metadata', {}).get('name', 'unknown')
+            
+            print(f"\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] Event: {event_type} - {resource_name}")
+            
+            if event_type == 'DELETED':
+                handle_db_user_object_deletion(db_user)
+            elif event_type == 'ADDED':
+                print(f"DbUser {resource_name} was added (no action taken)")
+            elif event_type == 'MODIFIED':
+                print(f"DbUser {resource_name} was modified (no action taken)")
+            
+    except KeyboardInterrupt:
+        print("\nStopping watch...")
+        w.stop()
+    except ApiException as e:
+        print(f"API Exception while watching: {e}")
+        raise
+    except Exception as e:
+        print(f"Unexpected error while watching: {e}")
+        raise
+
+
 def main():
-    """Main function to watch and manage DbUserRequest CRDs"""
-    print("Kubernetes DbUserRequest CRD Manager")
+    """Main function to watch and manage DbUserRequest and DbUser CRDs"""
+    print("Kubernetes CRD Manager")
     print("=" * 60)
     
     # Load Kubernetes configuration
@@ -279,13 +365,37 @@ def main():
         print(f"Error connecting to Kubernetes: {e}")
         sys.exit(1)
     
-    print(f"\nStarting to watch for DbUserRequest resources...")
+    print(f"\nStarting to watch for DbUserRequest and DbUser resources...")
     print(f"Namespace: {namespace}")
     print(f"Press Ctrl+C to stop\n")
     
-    # Start watching for DbUserRequest resources
+    # Start watching for both DbUserRequest and DbUser resources in separate threads
     try:
-        watch_db_user_requests(namespace=namespace)
+        # Create threads for both watchers
+        db_user_request_thread = threading.Thread(
+            target=watch_db_user_requests,
+            args=(namespace,),
+            daemon=True,
+            name="DbUserRequestWatcher"
+        )
+        
+        db_user_thread = threading.Thread(
+            target=watch_db_users,
+            args=(namespace,),
+            daemon=True,
+            name="DbUserWatcher"
+        )
+        
+        # Start both threads
+        db_user_request_thread.start()
+        db_user_thread.start()
+        
+        print("Both watchers started successfully\n")
+        
+        # Keep the main thread alive
+        while True:
+            time.sleep(1)
+            
     except KeyboardInterrupt:
         print("\nShutting down gracefully...")
         sys.exit(0)
