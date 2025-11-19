@@ -254,6 +254,24 @@ def handle_db_user_creation(db_user_request):
 
     except Exception as e:
         print(f"Error handling DbUserRequest creation: {e}")
+        # Create an event for the unexpected error
+        try:
+            metadata = db_user_request.get('metadata', {})
+            resource_name = metadata.get('name', 'unknown')
+            namespace = metadata.get('namespace', 'default')
+            resource_uid = metadata.get('uid', '')
+            
+            error_message = f"Unexpected error during user creation: {str(e)}"
+            create_event_for_resource(
+                resource_name=resource_name,
+                namespace=namespace,
+                resource_uid=resource_uid,
+                reason='UnexpectedError',
+                message=error_message,
+                event_type='Warning'
+            )
+        except Exception as event_error:
+            print(f"Failed to create event for unexpected error: {event_error}")
 
 
 def handle_db_user_deletion(db_user_request):
