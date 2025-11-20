@@ -316,6 +316,7 @@ def handle_db_user_creation(db_user_request):
         db_type = spec.get('db_type', '')
         user_and_db_name = spec.get('db_name', '')
         secret_name = spec.get('secret_name', '')
+        custom_db_name_prop = spec.get('custom_db_name_prop', '')
         metadata = db_user_request.get('metadata', {})
         resource_name = metadata.get('name', 'unknown')
         namespace = metadata.get('namespace', 'default')
