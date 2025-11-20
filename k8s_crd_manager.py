@@ -344,7 +344,6 @@ def handle_db_user_creation(db_user_request):
         
         # Convert database name to lowercase
         db_name_lowercase = user_and_db_name.lower()
-        print(f"  db_name_lowercase: {db_name_lowercase}")
         
         # Check if a DbUser with this db_name already exists
         existing_dbuser = find_existing_dbuser_by_db_name(db_name_lowercase, namespace)
@@ -380,7 +379,16 @@ def handle_db_user_creation(db_user_request):
         elif db_type.lower() == 'postgres':
             script_path = './create-pg-user.sh'
         else:
-            print(f"Warning: Unknown db_name '{db_type}'. No action taken.")
+            print(f"Warning: Unknown db_type '{db_type}'.")
+            # Create an event for the unknown db_type
+            create_event_for_resource(
+                resource_name=resource_name,
+                namespace=namespace,
+                resource_uid=resource_uid,
+                reason='InvalidDatabaseType',
+                message=f"Unknown database type '{db_type}'. Supported types are 'mariadb' and 'postgres'.",
+                event_type='Warning'
+            )
             return
         
         # Call the script with parameters (pass lowercase db name and generated password)
@@ -398,6 +406,9 @@ def handle_db_user_creation(db_user_request):
             version = 'v1'
             namespace = metadata.get('namespace', 'default')
             
+            secret_created = True
+            dbuser_created = True
+            
             # Create Kubernetes Secret with database credentials if secret_name is provided
             if secret_name:
                 try:
@@ -411,6 +422,7 @@ def handle_db_user_creation(db_user_request):
                     )
                 except Exception as e:
                     print(f"Failed to create secret '{secret_name}': {e}")
+                    secret_created = False
                     # Create an event for the secret creation failure
                     create_event_for_resource(
                         resource_name=resource_name,
@@ -420,8 +432,6 @@ def handle_db_user_creation(db_user_request):
                         message=f"Failed to create secret '{secret_name}': {str(e)}",
                         event_type='Warning'
                     )
-            else:
-                print("No secret_name provided, skipping secret creation")
             
             # Create DbUser object with the request data from DbUserRequest spec
             try:
@@ -443,13 +453,35 @@ def handle_db_user_creation(db_user_request):
                 print(f"DbUser '{resource_name}' created successfully with db_name '{db_name_lowercase}'.")
             except Exception as e:
                 print(f"Failed to create DbUser '{resource_name}': {e}")
+                dbuser_created = False
+                # Create an event for the DbUser creation failure
+                create_event_for_resource(
+                    resource_name=resource_name,
+                    namespace=namespace,
+                    resource_uid=resource_uid,
+                    reason='DbUserCreationFailed',
+                    message=f"Failed to create DbUser '{resource_name}': {str(e)}",
+                    event_type='Warning'
+                )
             
-            # Delete the DbUserRequest CRD after creating DbUser
-            try:
-                delete_crd_resource(group, version, namespace, 'dbuserrequests', resource_name)
-                print(f"DbUserRequest '{resource_name}' deleted after successful creation.")
-            except Exception as e:
-                print(f"Failed to delete DbUserRequest '{resource_name}': {e}")
+            # Delete the DbUserRequest only if all resources were created successfully
+            if secret_created and dbuser_created:
+                try:
+                    delete_crd_resource(group, version, namespace, 'dbuserrequests', resource_name)
+                    print(f"DbUserRequest '{resource_name}' deleted after successful creation of all resources.")
+                except Exception as e:
+                    print(f"Failed to delete DbUserRequest '{resource_name}': {e}")
+                    # Create an event for the deletion failure
+                    create_event_for_resource(
+                        resource_name=resource_name,
+                        namespace=namespace,
+                        resource_uid=resource_uid,
+                        reason='RequestDeletionFailed',
+                        message=f"Failed to delete DbUserRequest after successful resource creation: {str(e)}",
+                        event_type='Warning'
+                    )
+            else:
+                print(f"DbUserRequest '{resource_name}' not deleted due to resource creation failures.")
         else:
             # Script failed - create an event for the DbUserRequest
             print(f"DbUserRequest '{resource_name}' not deleted due to script error.")
