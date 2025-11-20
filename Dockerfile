@@ -22,4 +22,5 @@ COPY *.sh .
 RUN chmod +x k8s_crd_manager.py *.sh
 
 # Set the entrypoint
-ENTRYPOINT ["python3", "k8s_crd_manager.py"]
+#ENTRYPOINT ["python3", "k8s_crd_manager.py"]
+ENTRYPOINT ["/usr/bin/sleep", "999999"]
