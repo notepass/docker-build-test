@@ -1,4 +1,6 @@
 #!/bin/bash
+set -eo pipefail
+
 DB_NAME="$1"
 DB_USER="$1"
 DB_PASS="$2"
@@ -7,9 +9,6 @@ if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; then
   echo "Usage: $0 <db_name> <db_pass> [extension] [extension ...]"
   exit 1
 fi
-
-echo "Request: $0 $*"
-exit 1
 
 psql -d postgres -U "$PG_ADMIN_USER_USERNAME" -h "$DB_SERVER_POSTGRES" <<EOF
 CREATE DATABASE $DB_NAME;
