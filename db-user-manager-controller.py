@@ -296,6 +296,7 @@ def watch_user_requests():
                         #create_event_for_request(db_user_request, 'ValidationFailed', exc)
                         continue
 
+                    # TODO: Also checkk if the secret already exists. Creation order is secret -> dbuser -> delete request!
                     if find_existing_dbuser_by_db_name(db_user_request):
                         # TODO: Copy secret in this case. Also integrate find_existing_dbuser_by_db_name into this case, where there is another DBUR with a different name but same DB.
                         # Both cases should just copy the secret.
