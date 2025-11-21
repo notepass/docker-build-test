@@ -132,7 +132,8 @@ def call_create_script(request, password):
 
         # Call the script with parameters (pass lowercase db name and generated password)
     cmd = [script_path, db_name, password]
-    cmd.extend(str(ext) for ext in extensions)
+    if extensions and isinstance(extensions, list):
+        cmd.extend(str(ext) for ext in extensions)
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
