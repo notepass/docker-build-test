@@ -16,10 +16,10 @@ from kubernetes.client.rest import ApiException
 from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 
 handler = logging.StreamHandler(sys.stderr)
-handler.setLevel(logging.INFO)
+handler.setLevel(logging.DEBUG)
 # [%(asctime)s] [%(name)s]
 formatter = logging.Formatter('[%(levelname)s] %(message)s')
 handler.setFormatter(formatter)
@@ -136,7 +136,7 @@ def create_db_user(request):
             'created': datetime.now(timezone.utc).isoformat()
         }
     }
-    create_crd_resource('notepass.de', 'v1', metadata_obj.get('namespace'), 'dbuser', db_user_body)
+    create_crd_resource('notepass.de', 'v1', metadata_obj.get('namespace'), 'dbusers', db_user_body)
     log.info("DbUser created")
 
 def create_crd_resource(group, version, namespace, plural, body):
