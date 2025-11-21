@@ -176,21 +176,6 @@ def create_custom_object_watch(plural):
     except Exception as e:
         raise Exception(f"Could not create a watch for notepass.de:{plural}:v1. Reason: {e}")
 
-def db_user_exists(request):
-    metadata_obj = request.get('metadata')
-    namespace = metadata_obj.get('namespace')
-    name = metadata_obj.get('name')
-
-    response = client.CustomObjectsApi().list_namespaced_custom_object(
-        group='notepass.de',
-        version='v1',
-        namespace=namespace,
-        plural='dbusers',
-        name=name
-    )
-
-    return len(response.get('items', [])) > 0
-
 
 def find_existing_dbuser_by_db_name(request):
     """
@@ -296,8 +281,8 @@ def watch_user_requests():
                         #create_event_for_request(db_user_request, 'ValidationFailed', exc)
                         continue
 
-                    if db_user_exists(db_user_request):
-                        # TODO: Copy secret in this case. Also integrate create_secret_for_request into this case, where there is another DBUR with a different name but same DB.
+                    if find_existing_dbuser_by_db_name(db_user_request):
+                        # TODO: Copy secret in this case. Also integrate find_existing_dbuser_by_db_name into this case, where there is another DBUR with a different name but same DB.
                         # Both cases should just copy the secret.
                         log.info(f"DbUser with name '{source_name}' already exists, skipping creating of new DB/User. Will skip request. Note: Secrets are not copied!")
                     else:
