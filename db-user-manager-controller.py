@@ -384,7 +384,8 @@ def validate_user_request(request):
         raise Exception(f"Validation error: The secret_name value '{user_and_db_name}' is invalid: {e}")
 
 def watch_db_users():
-    log.info("Watching DB users")
+    log.info("[STUB] NOT watching DB users")
+    # TODO: Delete user when DbUser bject is deleted (?) => can of worms as other requests might use that user
 
 shutdown_flag = False
 
