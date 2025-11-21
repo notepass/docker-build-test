@@ -15,7 +15,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application files
-COPY k8s_crd_manager.py .
+COPY *.py .
 COPY *.sh .
 
 # Make the scripts executable
