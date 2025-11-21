@@ -9,6 +9,7 @@ import string
 import logging
 import traceback
 import base64
+import signal
 from importlib.metadata import metadata
 
 from kubernetes import client, config, watch
@@ -290,9 +291,17 @@ def watch_user_requests():
     try:
         for event in create_custom_object_watch("dbuserrequests"):
             try:
-                event_type = event['type']
+                # TODO: Move isInstance logic to validation
+                # TODO: Parse reqeust as object an pass that to make life easier
+                if not isinstance(event, dict):
+                    log.warning(f"Received non-dict event: {event}. Skipping.")
+                    continue
+                event_type = event.get('type')
                 if event_type == 'ADDED':
-                    db_user_request = event['object']
+                    db_user_request = event.get('object', {})
+                    if not isinstance(db_user_request, dict):
+                        log.warning(f"Received non-dict db_user_request: {db_user_request}. Skipping.")
+                        continue
                     source_name = db_user_request.get('metadata', {}).get('name')
                     source_namespace = db_user_request.get('metadata', {}).get('namespace')
                     log.info(f"New DbUserRequest created with name '{source_name}' in '{source_namespace}'. Trying to process")
@@ -377,6 +386,15 @@ def validate_user_request(request):
 def watch_db_users():
     log.info("Watching DB users")
 
+shutdown_flag = False
+
+def handle_sigterm(signum, frame):
+    global shutdown_flag
+    log.info("Received SIGTERM, shutting down...")
+    shutdown_flag = True
+
+signal.signal(signal.SIGTERM, handle_sigterm)
+
 def main():
     log.info("Kubernetes external DB User manager")
     log.info("=" * 60)
@@ -414,9 +432,12 @@ def main():
 
         log.info("Both watchers started successfully")
 
-        # Keep the main thread alive
-        while True:
+        # Keep the main thread alive, exit immediately on shutdown_flag
+        while not shutdown_flag:
             time.sleep(1)
+
+        log.info("Main loop exiting due to shutdown flag.")
+        sys.exit(0)
 
     except KeyboardInterrupt:
         log.info("Shutting down gracefully...")
