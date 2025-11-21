@@ -116,19 +116,26 @@ def call_create_script(request, password):
     db_type = spec.get('db_type').lower()
     db_name = spec.get('db_name').lower()
 
+    extensions = []
     if db_type == 'mariadb':
         script_path = './create-mariadb-user.sh'
     elif db_type == 'postgres':
         script_path = './create-pg-user.sh'
+        pg_options = spec.get('postgres', {})
+        pg_extensions = pg_options.get('extensions')
+        extensions = spec.get('extensions')
+        if pg_extensions and isinstance(pg_extensions, list):
+            extensions = pg_extensions
     else:
         raise Exception(f"Unknown database type '{db_type}'.")
 
         # Call the script with parameters (pass lowercase db name and generated password)
     cmd = [script_path, db_name, password]
+    cmd.extend(str(ext) for ext in extensions)
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
-        log.info(f"Successfully called {script_path} to create DB {db_name}.")
+        log.info(f"Successfully called {script_path} to create DB {db_name}. Output:\n========\nSTDOUT: {result.stdout}\n========\nSTDERR:{result.stderr}")
         return db_name
     else:
         raise Exception(f"Script {script_path} returned with exit code {result.returncode}.\n========\nSTDOUT: {result.stdout}\n========\nSTDERR:{result.stderr}")
