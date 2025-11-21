@@ -15,11 +15,26 @@ from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
 from datetime import datetime, timezone
 
+log_level = logging.INFO
+
+if os.environ['LOG_LEVEL']:
+    match os.environ['LOG_LEVEL']:
+        case "DEBUG":
+            log_level = logging.DEBUG
+        case "INFO":
+            log_level = logging.INFO
+        case "WARNING":
+            log_level = logging.WARNING
+        case "ERROR":
+            log_level = logging.ERROR
+        case "CRITICAL":
+            log_level = logging.CRITICAL
+
 log = logging.getLogger(__name__)
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(log_level)
 
 handler = logging.StreamHandler(sys.stderr)
-handler.setLevel(logging.DEBUG)
+handler.setLevel(log_level)
 # [%(asctime)s] [%(name)s]
 formatter = logging.Formatter('[%(levelname)s] %(message)s')
 handler.setFormatter(formatter)
