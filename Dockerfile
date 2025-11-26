@@ -19,8 +19,7 @@ COPY *.py .
 COPY *.sh .
 
 # Make the scripts executable
-RUN chmod +x k8s_crd_manager.py *.sh
+RUN chmod +x *.py *.sh
 
 # Set the entrypoint
-#ENTRYPOINT ["python3", "k8s_crd_manager.py"]
 ENTRYPOINT ["python3", "db-user-manager-controller.py"]
