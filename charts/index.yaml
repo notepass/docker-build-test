@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  db-user-provider:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-11-26T17:21:36.456184996Z"
+    description: A Helm chart containing all needed data structures to reqeust DB
+      users for different apps.
+    digest: 1dc107c373d643e64c8de14dfd91110ff8b0b4806d785f1606eb496686f3bfa7
+    name: db-user-provider
+    type: application
+    urls:
+    - https://notepass.github.io/external-db-user-provider/charts/db-user-provider-1.0.0.tgz
+    version: 1.0.0
+generated: "2025-11-26T17:21:36.455587868Z"
