@@ -247,7 +247,7 @@ def watch_user_requests():
 
                     # TODO: Also checkk if the secret already exists. Creation order is secret -> dbuser -> delete request!
                     if find_existing_secret(db_user_request.get('spec', {}).get('secret_name'), db_user_request.get('metadata', {}).get('namespace')):
-                        msg = f"Secret with name '{db_user_request.get('spec', {}).get('secret_name')}' already exists, skipping creating of new DB/User. Will skip request. Note: Will create DbUser for entry"
+                        msg = f"Secret with name '{db_user_request.get('spec', {}).get('secret_name')}' already exists, skipping creating of new DB/User. Will skip request."
                         log.info(msg)
                         update_request_status(db_user_request, "Fulfilled", msg)
                     else:
