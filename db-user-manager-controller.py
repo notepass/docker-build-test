@@ -255,7 +255,7 @@ def watch_user_requests():
                         password = generate_simple_password()
                         db_name_and_username = call_create_script(db_user_request, password)
                         create_secret_for_request(db_user_request, password)
-                        msg = f"DbUser for DB {db_name_and_username} with username {db_name_and_username} successfully created. Credentials stored in secret {db_user_request.get("spec", {}).get('secret_name')}."
+                        msg = f"DbUser for DB {db_name_and_username} with username {db_name_and_username} successfully created. Credentials stored in secret {db_user_request.get('spec', {}).get('secret_name')}."
                         log.info(msg)
                         update_request_status(db_user_request, "Fulfilled", msg)
 
