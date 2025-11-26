@@ -15,8 +15,7 @@ spec:
       serviceAccountName:  db-user-provider-sa
       containers:
         - name: controller
-          image: {{ .Values.image }}:{{ .Values.imageVersion | default.Chart.AppVersion }}
-          #image: nginx
+          image: {{ .Values.container.image }}:{{ .Values.imageVersion | default .Chart.AppVersion }}
           env:
             - name: MYSQL_HOST
               value: {{ .Values.config.mariadb.host }}
