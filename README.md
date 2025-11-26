@@ -4,8 +4,8 @@ to automate DB user bootstrapping. It is currently compatible with postgres and 
 The provider itself is very minimalistic and might not fit your use case, so customisation might be necesarry.
 
 ## Setting it up
-You will need to add the helm repository first via ``helm repo add db-user-provider https://notepass.github.io/external-db-user-provider``.
-Then install the chart via: ``helm install external-db-user-provider db-user-provider/external-db-user-provider --namespace external-db-user-provider``.
+You will need to add the helm repository first via ``helm repo add db-user-provider https://notepass.github.io/external-db-user-provider/charts``.
+Then install the chart via: ``helm install db-user-provider db-user-provider/db-user-provider --namespace db-user-provider``.
 
 The default configuration expects two secrets in the namespace the chart is deployed to:
 - pg-admin-creds
@@ -17,6 +17,9 @@ This is also, why it is advisable to deploy this application to its own namespac
 
 The name of the secrets as well as the keys for username and password can be changed via the values file.
 Just have a look at the default file as a reference, it is quite small.
+
+**Note:** As OCI helm charts break my workflow completely, this chart is not deployed via OCI and can only be accessed
+as a proper helm repo chart!
 
 ## Using it
 The provider comes with 2 CRDs: ``DbUserRequest`` and ``DbUser``. You will need to create a ``DbUserRequest``
