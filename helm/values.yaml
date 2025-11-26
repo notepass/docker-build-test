@@ -14,3 +14,4 @@ config:
       usernameKey: username
       passwordKey: password
     host: 127.0.0.1
+  image: ghcr.io/notepass/external-db-user-provider

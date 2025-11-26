@@ -15,7 +15,7 @@ spec:
       serviceAccountName:  db-user-provider-sa
       containers:
         - name: controller
-          image: ghcr.io/notepass/external-db-user-provider:main-13c1867
+          image: {{ .Values.image }}:{{ .Values.imageVersion | default.Chart.AppVersion }}
           #image: nginx
           env:
             - name: MYSQL_HOST
