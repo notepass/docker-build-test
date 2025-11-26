@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "helm/Chart.yaml"
+      - "kube/Chart.yaml"
 
 jobs:
   update-repo:

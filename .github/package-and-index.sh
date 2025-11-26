@@ -1,8 +1,8 @@
 #!/bin/bash
 set -eo pipefail
 
-CHART_DIR="$(pwd)/charts"
-SOURCE_DIR="$(pwd)/helm"
+CHART_DIR="$(pwd)/web/charts"
+SOURCE_DIR="$(pwd)/helm-chart"
 
 if [ ! -d "$CHART_DIR" ]
 then

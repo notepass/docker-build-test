@@ -7,8 +7,8 @@ on:
     branches:
       - main
     paths:
-      - "charts/index.yaml"
-      - "README.md"
+      - "web/charts/index.yaml"
+      - "web/README.md"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -41,7 +41,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload entire repository
-          path: '.'
+          path: 'web'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

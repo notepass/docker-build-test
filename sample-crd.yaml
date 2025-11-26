@@ -1,0 +1,9 @@
+apiVersion: notepass.de/v1
+kind: DbUserRequest
+metadata:
+  name: db-user-test-100
+spec:
+  db_type: postgres # or mariadb
+  db_name: my_db_name # name of the DB to be created. Will also be used as the username
+  secret_name: db-user-test1-secret # Secret to store the DB credentials into
+  custom_db_name_prop: pgsql # Optional parameter: Will add a dbTypeCustom to the secret, see the information on the created secret for this to make more sense
