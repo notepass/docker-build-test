@@ -1,6 +1,11 @@
 name: Build and push helm artifacts
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "helm/Chart.yaml"
 
 jobs:
   update-repo:
